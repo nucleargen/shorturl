@@ -1,58 +1,79 @@
-<!DOCTYPE html>
-<html><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <meta charset="utf-8">
-        <link href="testtask-styles.css" rel="stylesheet">
-        <title>XIAG test task</title>
-        <meta name="robots" content="noindex,nofollow">
-        <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0">
-    </head>
-    <body cz-shortcut-listen="true">
-    <div class="content">
-        <header>URL shortener</header>
-        <form action="javascript:alert('TODO: AJAX request')">
-            <table>
-                <tbody><tr>
-                    <th>Long URL</th>
-                    <th>Short URL</th>
-                </tr>
-                <tr>
-                    <td>
-                        <input name="url" type="url">
-                        <input value="Do!" type="submit">
-                    </td>
-                    <td id="result"></td>
-                </tr>
-            </tbody></table>
-        </form>
-        <footer>
-            <pre>            Using this HTML please implement the following:
+<?php
+define('ROOT', realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR);
 
-            1. Site-visitor (V) enters any original URL to the Input field, like
-            http://anydomain/any/path/etc;
-            2. V clicks submit button;
-            3. Page makes AJAX-request;
-            4. Short URL appears in Span element, like http://yourdomain/abCdE (don't use any
-               external APIs as goo.gl etc.);
-            5. V can copy short URL and repeat process with another link
+//process form
+render_tpl((function() {
+	$tpl_data = [
+		'filtered_url'	=>	'',
+		'shortened_url'	=>	'',
+		'error'			=>	'',
+	];
+	// check that our form is submitted
+	if ( ! empty($_POST['form_name']) AND $_POST['form_name'] == 'url_shortener') {
+		//validate url
+		$url = filter_input(INPUT_POST, 'url', FILTER_VALIDATE_URL);
+		$url OR $url = '';
 
-            Short URL should redirect to the original link in any browser from any place and keep
-            actuality forever, doesn't matter how many times application has been used after that.
+		$tpl_data['filtered_url'] = $url;
+		if (empty($url)) {
+			$tpl_data['error'] = 'Invalid url';
+			return $tpl_data;
+		}
+		// generate short url
+		$affix = random_string();
+		$tpl_data['shortened_url'] = 'http://'.($_SERVER['HTTP_HOST'] ?? $_SERVER['HTTPs_HOST'] ?? '' ).'/'.$affix;
+	}
+	return $tpl_data;
+})());
+/*
+echo "<pre>\n";
+echo print_r($_SERVER,TRUE);
+echo print_r($_POST,TRUE);
+echo "</pre>\n";
+*/
+function render_tpl(array $data = [], string $template = 'tpl/index.php') {
+	$ajax_header = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? NULL;
+	if ($ajax_header == 'XMLHttpRequest') {
+		header('Content-type: application/json');
+		echo json_encode($data);
+		exit();
+	}
+	extract($data);
+	include "tpl/index.php";
+	
+}
 
+function random_string($length = 5) {
 
-            Requirements:
+	$pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	
+	// Split the pool into an array of characters
+	$pool = str_split($pool, 1);
+	
+	// Largest pool key
+	$max = count($pool) - 1;
+	
+	$str = '';
+	for ($i = 0; $i < $length; $i++)
+	{
+		// Select a random character from the pool and add it to the string
+		$str .= $pool[mt_rand(0, $max)];
+	}
 
-            1. Use PHP or Node.js;
-            2. Don't use any frameworks.
-                
-            Expected result:
+	// Make sure alnum strings contain at least one letter and one digit
+	if ($length > 1)
+	{
+		if (ctype_alpha($str))
+		{
+			// Add a random digit
+			$str[mt_rand(0, $length - 1)] = chr(mt_rand(48, 57));
+		}
+		elseif (ctype_digit($str))
+		{
+			// Add a random letter
+			$str[mt_rand(0, $length - 1)] = chr(mt_rand(65, 90));
+		}
+	}
 
-            1. Source code;
-            2. System requirements and installation instructions on our platform, in English.
-            </pre>
-
-        </footer>
-    </div>
-    
-
-</body></html>
+	return $str;
+}	
