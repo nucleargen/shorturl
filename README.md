@@ -1,4 +1,4 @@
-# shorturl_test
+# Simple URL Shortener
 
 ## System requirements
 
